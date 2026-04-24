@@ -1,0 +1,56 @@
+model:
+  text2midi_model:
+    decoder_max_sequence_length: 2048
+
+    # Student architecture (matches arch_from_d_model(384) in your student/KD script)
+    decoder_num_layers: 18
+    decoder_num_heads: 8
+    decoder_d_model: 384
+    decoder_intermediate_size: 256
+
+    use_moe: false
+    num_experts: 4
+    use_deepspeed: false
+    use_accelerate: true
+
+training:
+  text2midi_model:
+    compile: false
+    run_name: text2midi_student        # used only by train_hf (safe to keep)
+    epochs: 200
+    batch_size: 1                      # used by non-accelerate path
+    learning_rate: 0.0001
+    weight_decay: 0.01
+    gradient_accumulation_steps: 4
+    with_tracking: true
+    checkpointing_steps: epoch         # {"epoch", "best", int}
+    report_to: wandb
+    output_dir: /home/brett_ece/midi/text2midi_student/Output2
+    per_device_train_batch_size: 32
+    use_scheduler: true
+    lr_scheduler_type: cosine          # ["linear","cosine","cosine_with_restarts",...]
+    num_warmup_steps: 609
+    save_every: 5
+    max_train_steps: "None"            # string on purpose to match the code
+    scheduled_sampling: false
+    epsilon: 0
+    c: -0.0161
+    k: -0.312
+
+raw_data:
+  caption_dataset_path: /home/brett_ece/midi/text2midi_teacher/Input/captions_clean.jsonl
+  raw_data_folders:
+    # Used by your training datasets (Text2MusicDatasetRemi / Aria)
+    midicaps:
+      folder_path: /home/brett_ece/midi/text2midi_teacher/Input/fixed
+      file_extension: mid
+
+    # Used by build_vocab_remi() in the script (expects "lmd" key)
+    lmd:
+      folder_path: /home/brett_ece/midi/text2midi_teacher/Input/fixed
+      file_extension: mid
+
+deepspeed_config:
+  deepspeed_config_path: /home/brett_ece/midi/text2midi_teacher/configs/ds_config.json
+
+artifact_folder: /home/brett_ece/midi/text2midi_teacher/artifact
